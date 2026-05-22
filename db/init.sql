@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS productos (
     precio DECIMAL(10,2) NOT NULL
 );
 
-INSERT INTO productos (nombre, descripcion, precio, stock) VALUES
+INSERT INTO productos (nombre, descripcion, precio) VALUES
 ('InnovaTech Cloud Starter Pack', 'Suscripción mensual de servidores virtuales y balanceador de carga básico optimizado para PyMEs.', 45000),
 ('Licencia Enterprise DevOps Suite', 'Acceso anual a herramientas avanzadas de CI/CD, monitoreo de infraestructura y contenedores Docker.', 120000),
 ('Soporte Premium 24/7 AWS', 'Soporte técnico especializado con ingenieros certificados en arquitectura cloud y mitigación de fallos.', 85000),
