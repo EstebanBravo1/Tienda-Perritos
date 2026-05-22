@@ -1,4 +1,4 @@
-# Tienda de Alimentos para Perritos 🐶
+# Innovatech
 
 Aplicación de ejemplo en 3 capas usando Docker y Docker Compose:
 
