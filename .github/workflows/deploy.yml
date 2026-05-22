@@ -3,14 +3,14 @@ name: Deploy Backend to AWS EC2
 on:
   push:
     branches:
-      - main  # <- Asegúrate de que este sea el nombre de tu rama principal (main o master)
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Descargar el código del repositorio en el servidor de GitHub
+      # 1. Descargar el código del repositorio
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -21,54 +21,92 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: us-east-1  # <- Cambia la región si tu laboratorio usa otra (ej: us-east-1 es la típica)
-
-      # 3. Enviar comandos a la instancia EC2-Backend vía AWS Systems Manager (SSM)
-      - name: Execute remote commands via SSM
-        uses: peterkimzz/aws-ssm-action@master
-        with:
           aws-region: us-east-1
-          instance-ids: ${{ secrets.AWS_INSTANCE_ID_BACKEND }}
-          comment: "Desplegando el Backend de la tienda de perritos"
-          command: |
-            # 1. Moverse a la carpeta del proyecto creada por el User Data
-            cd /home/ssm-user/innova-backend
-            
-            # 2. Limpiar cualquier código viejo y traer el nuevo desde GitHub
-            # (Nota: Asume que clonarás tu repositorio aquí o copiaremos los archivos directamente)
-            # Para esta entrega, como tienes los archivos listos, haremos un build directo:
-            
-            # Crear el archivo .env dinámicamente en el servidor con la IP interna de la BD
-            echo "PORT=3000" > .env
-            echo "DB_HOST=172.31.23.202" >> .env
-            echo "DB_USER=root" >> .env
-            echo "DB_PASSWORD=admin123" >> .env
-            echo "DB_NAME=tienda_perritos" >> .env
-            echo "DB_PORT=3306" >> .env
 
-            # 3. Crear el archivo Dockerfile en el servidor (para asegurar que use la versión corregida)
-            cat << 'EOF' > Dockerfile
-            FROM node:18-alpine AS builder
-            WORKDIR /app
-            COPY package*.json ./
-            RUN npm install --production
-
-            FROM node:18-alpine
-            WORKDIR /app
-            USER node
-            COPY --chown=node:node --from=builder /app/node_modules ./node_modules
-            COPY --chown=node:node . .
-
-            EXPOSE 3000
-            CMD ["node", "server.js"]
-            EOF
-
-            # 4. Detener el contenedor anterior si es que ya existía uno corriendo
-            docker stop innova-backend-container || true
-            docker rm innova-backend-container || true
-
-            # 5. Descargar tu archivo server.js y package.json (reemplaza por tu repositorio real si aplica)
-            # Si usas git en la máquina, descomenta la línea de abajo. Si no, buildear más abajo.
-            
-            # 6. Construir la imagen de Docker localmente en la EC2 y encender el backend en el puerto 3000
-            # Como aún no clonas con git dentro de la máquina, este script dejará la estructura lista.
+      # 3. Enviar comandos a la EC2 usando la herramienta oficial de AWS CLI via SSM
+      - name: Execute remote commands via AWS SSM Native
+        run: |
+          aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --instance-ids "${{ secrets.AWS_INSTANCE_ID_BACKEND }}" \
+            --region us-east-1 \
+            --comment "Desplegando el Backend de la tienda de perritos" \
+            --parameters 'commands=[
+              "mkdir -p /home/ssm-user/innova-backend",
+              "cd /home/ssm-user/innova-backend",
+              "echo \"PORT=3000\" > .env",
+              "echo \"DB_HOST=172.31.23.202\" >> .env",
+              "echo \"DB_USER=root\" >> .env",
+              "echo \"DB_PASSWORD=admin123\" >> .env",
+              "echo \"DB_NAME=tienda_perritos\" >> .env",
+              "echo \"DB_PORT=3306\" >> .env",
+              "cat << \"EOF\" > Dockerfile",
+              "FROM node:18-alpine AS builder",
+              "WORKDIR /app",
+              "COPY package*.json ./",
+              "RUN npm install --production",
+              "FROM node:18-alpine",
+              "WORKDIR /app",
+              "USER node",
+              "COPY --chown=node:node --from=builder /app/node_modules ./node_modules",
+              "COPY --chown=node:node . .",
+              "EXPOSE 3000",
+              "CMD [\"node\", \"server.js\"]",
+              "EOF",
+              "cat << \"EOF\" > package.json",
+              "{",
+              "  \"name\": \"innova-backend\",",
+              "  \"version\": \"1.0.0\",",
+              "  \"main\": \"server.js\",",
+              "  \"dependencies\": {",
+              "    \"cors\": \"^2.8.5\",",
+              "    \"dotenv\": \"^16.0.3\",",
+              "    \"express\": \"^4.18.2\",",
+              "    \"mysql2\": \"^3.2.0\"",
+              "  }",
+              "}",
+              "EOF",
+              "cat << \"EOF\" > server.js",
+              "const express = require(\"express\");",
+              "const cors = require(\"cors\");",
+              "const mysql = require(\"mysql2/promise\");",
+              "require(\"dotenv\").config();",
+              "const app = express();",
+              "const PORT = process.env.PORT || 3000;",
+              "const { DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT } = process.env;",
+              "app.use(cors());",
+              "app.use(express.json());",
+              "let pool;",
+              "async function initDb() {",
+              "  try {",
+              "    pool = mysql.createPool({",
+              "      host: DB_HOST,",
+              "      user: DB_USER,",
+              "      password: DB_PASSWORD,",
+              "      database: DB_NAME,",
+              "      port: DB_PORT,",
+              "      waitForConnections: true,",
+              "      connectionLimit: 10,",
+              "      queueLimit: 0",
+              "    });",
+              "    console.log(\"Pool de conexiones MySQL inicializado.\");",
+              "  } catch (err) {",
+              "    console.error(\"Error al inicializar pool de MySQL:\", err);",
+              "  }",
+              "}",
+              "initDb();",
+              "app.get(\"/api/productos\", async (req, res) => {",
+              "  try {",
+              "    const [rows] = await pool.query(\"SELECT * FROM productos\");",
+              "    res.json(rows);",
+              "  } catch (err) {",
+              "    res.status(500).json({ error: err.message });",
+              "  }",
+              "});",
+              "app.listen(PORT, () => console.log(\"Servidor corriendo en puerto \" + PORT));",
+              "EOF",
+              "docker stop innova-backend-container || true",
+              "docker rm innova-backend-container || true",
+              "docker build -t innova-backend .",
+              "docker run -d --name innova-backend-container -p 3000:3000 --restart always innova-backend"
+            ]'
