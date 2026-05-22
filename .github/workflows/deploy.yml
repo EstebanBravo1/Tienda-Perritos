@@ -1,0 +1,74 @@
+name: Deploy Backend to AWS EC2
+
+on:
+  push:
+    branches:
+      - main  # <- Asegúrate de que este sea el nombre de tu rama principal (main o master)
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Descargar el código del repositorio en el servidor de GitHub
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. Configurar las credenciales temporales de AWS Academy
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1  # <- Cambia la región si tu laboratorio usa otra (ej: us-east-1 es la típica)
+
+      # 3. Enviar comandos a la instancia EC2-Backend vía AWS Systems Manager (SSM)
+      - name: Execute remote commands via SSM
+        uses: peterkimzz/aws-ssm-action@master
+        with:
+          aws-region: us-east-1
+          instance-ids: ${{ secrets.AWS_INSTANCE_ID_BACKEND }}
+          comment: "Desplegando el Backend de la tienda de perritos"
+          command: |
+            # 1. Moverse a la carpeta del proyecto creada por el User Data
+            cd /home/ssm-user/innova-backend
+            
+            # 2. Limpiar cualquier código viejo y traer el nuevo desde GitHub
+            # (Nota: Asume que clonarás tu repositorio aquí o copiaremos los archivos directamente)
+            # Para esta entrega, como tienes los archivos listos, haremos un build directo:
+            
+            # Crear el archivo .env dinámicamente en el servidor con la IP interna de la BD
+            echo "PORT=3000" > .env
+            echo "DB_HOST=172.31.23.202" >> .env
+            echo "DB_USER=root" >> .env
+            echo "DB_PASSWORD=admin123" >> .env
+            echo "DB_NAME=tienda_perritos" >> .env
+            echo "DB_PORT=3306" >> .env
+
+            # 3. Crear el archivo Dockerfile en el servidor (para asegurar que use la versión corregida)
+            cat << 'EOF' > Dockerfile
+            FROM node:18-alpine AS builder
+            WORKDIR /app
+            COPY package*.json ./
+            RUN npm install --production
+
+            FROM node:18-alpine
+            WORKDIR /app
+            USER node
+            COPY --chown=node:node --from=builder /app/node_modules ./node_modules
+            COPY --chown=node:node . .
+
+            EXPOSE 3000
+            CMD ["node", "server.js"]
+            EOF
+
+            # 4. Detener el contenedor anterior si es que ya existía uno corriendo
+            docker stop innova-backend-container || true
+            docker rm innova-backend-container || true
+
+            # 5. Descargar tu archivo server.js y package.json (reemplaza por tu repositorio real si aplica)
+            # Si usas git en la máquina, descomenta la línea de abajo. Si no, buildear más abajo.
+            
+            # 6. Construir la imagen de Docker localmente en la EC2 y encender el backend en el puerto 3000
+            # Como aún no clonas con git dentro de la máquina, este script dejará la estructura lista.
