@@ -21,7 +21,7 @@ services:
       DB_NAME: tienda_perritos
       DB_PORT: 3306
     ports:
-      - "3001:3001"
+      - "3000:3000"
     depends_on:
       - db
     networks:
