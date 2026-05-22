@@ -1,5 +1,5 @@
-CREATE DATABASE IF NOT EXISTS tienda_perritos;
-USE tienda_perritos;
+CREATE DATABASE IF NOT EXISTS innova_db;
+USE innova_db;
 
 CREATE TABLE IF NOT EXISTS productos (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS productos (
 );
 
 INSERT INTO productos (nombre, descripcion, precio, stock) VALUES
-('Alimento Cachorro Premium', 'Sabor pollo, razas pequeñas', 19990, 15),
-('Alimento Adulto Light', 'Control de peso, razas medianas', 17990, 8),
-('Snacks Dentales', 'Ayuda a la limpieza dental', 5990, 30);
+('InnovaTech Cloud Starter Pack', 'Suscripción mensual de servidores virtuales y balanceador de carga básico optimizado para PyMEs.', 45000),
+('Licencia Enterprise DevOps Suite', 'Acceso anual a herramientas avanzadas de CI/CD, monitoreo de infraestructura y contenedores Docker.', 120000),
+('Soporte Premium 24/7 AWS', 'Soporte técnico especializado con ingenieros certificados en arquitectura cloud y mitigación de fallos.', 85000),
+('InnovaTech CyberSecurity Shield', 'Monitoreo perimetral y auditorías automatizadas de Security Groups y firewalls en tiempo real.', 65000);
