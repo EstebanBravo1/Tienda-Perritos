@@ -10,6 +10,6 @@ USER node
 COPY --chown=node:node --from=builder /app/node_modules ./node_modules
 COPY --chown=node:node . .
 
-EXPOSE 3001
+EXPOSE 3000
 
 CMD ["node", "server.js"]
