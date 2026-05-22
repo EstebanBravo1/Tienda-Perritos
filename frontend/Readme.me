@@ -1,0 +1,13 @@
+# Innova Frontend - Interfaz Web de la Tienda de Mascotas
+
+Este repositorio contiene la capa de presentación (Frontend) de la aplicación. Es una interfaz web SPA (Single Page Application) construida con HTML5 y JavaScript Vanilla, montada sobre un servidor web de alto rendimiento **Nginx**.
+
+## 🏗️ Arquitectura y Tecnologías
+- **Servidor Web:** Nginx (alpine)
+- **Lógica del Cliente:** JavaScript asíncrono (Fetch API)
+- **Contenedorización:** Docker
+- **CI/CD:** Despliegue automatizado hacia AWS EC2 usando GitHub Actions, condicionado a que el backend se despliegue correctamente primero (`needs: deploy-backend`).
+
+## 🌐 Conexión con la API (Integración)
+El archivo `app.js` consume los datos dinámicos apuntando directamente a la IP pública del Backend en el puerto 3000:
+const API_BASE = "[http://54.196.145.47:3000](http://54.196.145.47:3000)";
