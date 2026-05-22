@@ -25,6 +25,7 @@ services:
     depends_on:
       - db
     networks:
+      - public_net
       - private_net
   db:
     image: mysql:8
