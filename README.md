@@ -40,7 +40,7 @@ docker compose up -d
 3. Abrir en el navegador:
 
 - Frontend: http://localhost:8080
-- Backend (API): http://localhost:3001/api/productos
+- Backend (API): http://localhost:3000/api/productos
 
 4. Para detener los contenedores:
 
