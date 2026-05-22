@@ -1,4 +1,4 @@
-# Innova Backend - API de Productos (Catálogo de Mascotas)
+# Innova Backend - API de Productos
 
 Este repositorio contiene la capa lógica (Backend) de la aplicación, desarrollada en **Node.js** con **Express**. Se encarga de conectarse a la base de datos MySQL de forma segura y exponer un endpoint para consultar el catálogo de productos.
 
